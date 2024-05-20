@@ -10,5 +10,5 @@ type DB struct {
 }
 
 type DBStructure struct {
-	Chirps map[int]parameters `json:"chirps"`
+	Chirps map[int]chirps.Parameters `json:"chirps"`
 }
