@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+type parameters struct {
+	ID   int    `json:"id"`
+	Body string `json:"body"`
+}
+
+
+
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
 
 	response, err := json.Marshal(payload)
@@ -23,11 +30,6 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error
 }
 
 func validateChirp(w http.ResponseWriter, r *http.Request) {
-
-	type parameters struct {
-		ID   int    `json:"id"`
-		Body string `json:"body"`
-	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
