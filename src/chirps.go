@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"encoding/json"
@@ -13,6 +13,7 @@ type parameters struct {
 }
 
 
+var idCount int = 0;
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
 

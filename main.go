@@ -2,12 +2,13 @@ package main
 
 import (
 	"net/http"
+
+	"github.com/unnxt30/Chirpy-BD/src"
 )
 
-var idCount int = 0;
 
 func main(){
-	var apiCfg apiConfig;
+	var apiCfg src;
 	server_mux := http.NewServeMux()
 	var mock_server http.Server
 	
