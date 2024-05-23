@@ -6,11 +6,11 @@ import (
 	"os"
 )
 
-type apiConfig struct {
+type ApiConfig struct {
 	fileserverHits int
 }
 
-func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleMetrics(w http.ResponseWriter, r *http.Request) {
 	//fmt.Fprintf(w, "Hits: %v", cfg.fileserverHits);
 	data, err := os.ReadFile("metrics.html")
 	if err != nil {
@@ -25,7 +25,7 @@ func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(html_content))
 }
 
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+func (cfg *ApiConfig) MiddlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Increment the counter
 		cfg.fileserverHits++

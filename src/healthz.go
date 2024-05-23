@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func handleRequest(w http.ResponseWriter, r *http.Request) {
+func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	// Set the status code to 404 Not Found
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-type", "text/plain")
