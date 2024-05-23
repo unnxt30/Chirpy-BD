@@ -56,7 +56,7 @@ func NewDB(file_path string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	file.Close()
+	defer file.Close()
 
 	myDB := DB{
 		path: file_path,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	database "github.com/unnxt30/Chirpy-BD/internal"
@@ -74,6 +75,7 @@ func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func ChirpsGET(w http.ResponseWriter, r *http.Request) {
+
 	MyDatabase, err := database.NewDB("database.json")
 	if err != nil {
 		fmt.Println(err)
@@ -86,4 +88,37 @@ func ChirpsGET(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondWithJSON(w, 200, chirpArray)
+}
+
+func ChirpGETbyID(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+
+	MyDatabase, _ := database.NewDB("database.json")
+
+	chirpArray, _ := MyDatabase.GetChirp()
+
+	if id > len(chirpArray) {
+		RespondWithJSON(w, 404, map[string]string{"error": "ya bish"})
+		return
+	}
+
+	RespondWithJSON(w, 200, chirpArray[id-1])
+}
+
+func WriteUser(w http.ResponseWriter, r *http.Request) {
+	MyDatabase, err := database.NewDB("database.json")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	user := database.User{}
+	err = decoder.Decode(&user)
+	if err != nil {
+		RespondWithJSON(w, 404, map[string]string{"error": "couldn't create user"})
+	}
+	userData, _ := MyDatabase.CreateUser(user.Email)
+
+	RespondWithJSON(w, 201, userData)
 }
