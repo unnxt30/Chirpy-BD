@@ -24,6 +24,33 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) error
 
 }
 
+func GiveValidBody(w http.ResponseWriter, str string, params database.Parameters) string {
+	if len(params.Body) > 140 {
+		RespondWithJSON(w, 400, map[string]string{"error": "Chirp is too long"})
+		return ""
+	}
+	found := false
+	var cleaned_body_words []string
+	bad_words := []string{"kerfuffle", "sharbert", "fornax"}
+	//respondWithJSON(w, 200, map[string]bool{"valid" : true})
+	input_str := params.Body
+	for _, word := range strings.Split(input_str, " ") {
+		found = false
+		for _, bad_word := range bad_words {
+			if strings.ToLower(word) == bad_word {
+				found = true
+				break
+			}
+		}
+		if found {
+			cleaned_body_words = append(cleaned_body_words, "****")
+		} else {
+			cleaned_body_words = append(cleaned_body_words, word)
+		}
+	}
+	cleaned_body := strings.Join(cleaned_body_words, " ")
+	return cleaned_body
+}
 
 func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 	MyDatabase, err := database.NewDB("database.json")
@@ -38,32 +65,25 @@ func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		RespondWithJSON(w, 404, map[string]string{"error": "Something went wrong"})
 	} else {
-		if len(params.Body) > 140 {
-			RespondWithJSON(w, 400, map[string]string{"error": "Chirp is too long"})
-		} else {
-			found := false
-			var cleaned_body_words []string
-			bad_words := []string{"kerfuffle", "sharbert", "fornax"}
-			//respondWithJSON(w, 200, map[string]bool{"valid" : true})
-			input_str := params.Body
-			for _, word := range strings.Split(input_str, " ") {
-				found = false
-				for _, bad_word := range bad_words {
-					if strings.ToLower(word) == bad_word {
-						found = true
-						break
-					}
-				}
-				if found {
-					cleaned_body_words = append(cleaned_body_words, "****")
-				} else {
-					cleaned_body_words = append(cleaned_body_words, word)
-				}
-			}
-			cleaned_body := strings.Join(cleaned_body_words, " ")
-			MyDatabase.CreateChirp(cleaned_body)
-			RespondWithJSON(w, 200, map[string]string{"body": cleaned_body})
-		}
+		// fmt.Println("recieved Chirp Succesfully.")
+		chirpBody := GiveValidBody(w, params.Body, params)
+		responseChirp, _ := MyDatabase.CreateChirp(chirpBody)
+		fmt.Println("Created chirp")
+		RespondWithJSON(w, 201, responseChirp)
+	}
+}
+
+func ChirpsGET(w http.ResponseWriter, r *http.Request) {
+	MyDatabase, err := database.NewDB("database.json")
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
+	chirpArray, err := MyDatabase.GetChirp()
+	if err != nil {
+		RespondWithJSON(w, 404, map[string]string{"error": err.Error()})
+	}
+
+	RespondWithJSON(w, 200, chirpArray)
 }
