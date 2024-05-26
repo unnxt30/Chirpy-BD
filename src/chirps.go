@@ -106,7 +106,7 @@ func ChirpGETbyID(w http.ResponseWriter, r *http.Request) {
 }
 
 func WriteUser(w http.ResponseWriter, r *http.Request) {
-	MyDatabase, err := database.NewDB("database.json")
+	MyDatabase, err := database.NewDB("database_user.json")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -118,7 +118,23 @@ func WriteUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		RespondWithJSON(w, 404, map[string]string{"error": "couldn't create user"})
 	}
-	userData, _ := MyDatabase.CreateUser(user.Email)
+	userData, _ := MyDatabase.CreateUser(user.Email, user.Password)
 
-	RespondWithJSON(w, 201, userData)
+	RespondWithJSON(w, 201, map[string]any{"id": userData.ID, "email": userData.Email})
+	// RespondWithJSON(w, 201, userData);
+}
+
+func LoginUser(w http.ResponseWriter, r *http.Request) {
+	MyDatabase, err := database.NewDB("database_user.json")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	user := database.User{}
+	decoder.Decode(&user)
+
+	code, returnUser := MyDatabase.VerifyUser(user.Email, user.Password)
+
+	RespondWithJSON(w, code, map[string]any{"id": returnUser.ID, "email": returnUser.Email})
 }
