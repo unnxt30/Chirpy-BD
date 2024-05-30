@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	// "os"
 	"strconv"
 	"strings"
@@ -70,7 +71,7 @@ func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		RespondWithJSON(w, 404, map[string]string{"error": "Something went wrong"})
-	} else if database.CheckToken(jwtToken) != -1{
+	} else if database.CheckToken(jwtToken) != -1 {
 		auth_id := database.CheckToken(jwtToken)
 		// fmt.Println("recieved Chirp Succesfully.")
 		chirpBody := GiveValidBody(w, params.Body, params)
@@ -81,14 +82,21 @@ func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func ChirpsGET(w http.ResponseWriter, r *http.Request) {
-
+	author_id := r.URL.Query().Get("author_id")
+	order := r.URL.Query().Get("sort")
 	MyDatabase, err := database.NewDB("database.json")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	chirpArray, err := MyDatabase.GetChirp()
+	if author_id != "" {
+		id, _ := strconv.Atoi(author_id)
+		chirpsByAuth := MyDatabase.GetChirpByAuthor(id, order)
+		RespondWithJSON(w, 200, chirpsByAuth)
+	}
+
+	chirpArray, err := MyDatabase.GetChirp(order)
 	if err != nil {
 		RespondWithJSON(w, 404, map[string]string{"error": err.Error()})
 	}
@@ -101,7 +109,7 @@ func ChirpGETbyID(w http.ResponseWriter, r *http.Request) {
 
 	MyDatabase, _ := database.NewDB("database.json")
 
-	chirpArray, _ := MyDatabase.GetChirp()
+	chirpArray, _ := MyDatabase.GetChirp("")
 
 	if id > len(chirpArray) {
 		RespondWithJSON(w, 404, map[string]string{"error": "ya bish"})
@@ -111,3 +119,21 @@ func ChirpGETbyID(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, 200, chirpArray[id-1])
 }
 
+func DeleteChirp(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+
+	MyDatabse, _ := database.NewDB("database.json")
+
+	header := r.Header.Get("Authorization")
+	jwtToken := strings.TrimPrefix(header, "Bearer ")
+	chirpArray, _ := MyDatabse.GetChirp("")
+
+	if database.CheckToken(jwtToken) != chirpArray[id-1].Author_id {
+		RespondWithJSON(w, 403, map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	code := MyDatabse.DeleteChirpByID(id)
+	RespondWithJSON(w, code, "")
+
+}

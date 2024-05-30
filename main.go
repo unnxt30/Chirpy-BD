@@ -28,6 +28,8 @@ func main() {
 	server_mux.HandleFunc("PUT /api/users", src.UpdateUser)
 	server_mux.HandleFunc("POST /api/refresh", src.CheckRefToken)
 	server_mux.HandleFunc("POST /api/revoke", src.RevokeToken)
+	server_mux.HandleFunc("DELETE /api/chirps/{id}", src.DeleteChirp)
+	server_mux.HandleFunc("POST /api/polka/webhooks",src.CheckUpgradedUser )
 	mock_server.Addr = ":8080"
 	mock_server.Handler = server_mux
 

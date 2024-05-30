@@ -18,6 +18,7 @@ type User struct {
 	Email          string `json:"email"`
 	Password       string `json:"password"`
 	ExpirationTime int    `json:"expires_in_secods"`
+	Chirpy_red bool		`json:"is_chirpy_red"`
 }
 
 type DBStructUsers struct {
@@ -37,6 +38,7 @@ func (db *DB) CreateUser(args ...string) (User, error) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(args[1]), hashValue)
 	newUser.Password = string(hashedPassword)
 	newUser.ExpirationTime = 3600;
+	newUser.Chirpy_red = false
 
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -121,7 +123,8 @@ func (db *DB) VerifyUser(userEmail, userPassword string, expirationTime int) (in
 					Email:          userDataArray[i].Email,
 					ID:             userDataArray[i].ID,
 					Password:       userDataArray[i].Password,
-					ExpirationTime: expirationTime,
+					ExpirationTime: 3600,
+					Chirpy_red: userDataArray[i].Chirpy_red,
 				}
 				readData.Users[i] = newUser
 				writeData, _ := json.Marshal(readData)

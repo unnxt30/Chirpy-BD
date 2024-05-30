@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sort"
 )
 
 var chirpCount int = 0
@@ -120,7 +121,7 @@ func (db *DB) CreateChirp(body string, author_id int) (Parameters, error) {
 
 }
 
-func (db *DB) GetChirp() ([]Parameters, error) {
+func (db *DB) GetChirp(order string) ([]Parameters, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -137,6 +138,53 @@ func (db *DB) GetChirp() ([]Parameters, error) {
 		chirpsArray = append(chirpsArray, readData.Chirps[i])
 	}
 
+	if order == "asc" || order == "" {
+		sort.Slice(chirpsArray, func(i, j int) bool {
+			return chirpsArray[i].ID < chirpsArray[j].ID
+		})
+	}else if order == "desc"{
+		sort.Slice(chirpsArray, func(i, j int) bool {
+			return chirpsArray[i].ID > chirpsArray[j].ID
+		})
+	}
+
 	return chirpsArray, nil
+
+}
+
+func (db *DB) GetChirpByAuthor(id int, order string) []string {
+	chirpArray, _ := db.GetChirp(order)
+
+	var authorChirps []string
+	for i := 0; i < len(chirpArray); i++ {
+		if chirpArray[i].Author_id == id {
+			authorChirps = append(authorChirps, chirpArray[i].Body)
+		}
+	}
+
+	return authorChirps
+}
+
+func (db *DB) DeleteChirpByID(id int) int {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	file, err := os.ReadFile(db.path)
+	if err != nil {
+		fmt.Println(err.Error())
+		return 403
+	}
+
+	readData := &DBStructure{}
+	json.Unmarshal(file, &readData)
+
+	delete(readData.Chirps, id-1)
+
+	os.Remove(db.path)
+	openOrCreateFile(db.path)
+
+	writeData, _ := json.Marshal(readData)
+	os.WriteFile(db.path, writeData, 0666)
+	return 204
 
 }

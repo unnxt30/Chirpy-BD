@@ -28,7 +28,7 @@ func WriteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	userData, _ := MyDatabase.CreateUser(user.Email, user.Password)
 
-	RespondWithJSON(w, 201, map[string]any{"id": userData.ID, "email": userData.Email})
+	RespondWithJSON(w, 201, map[string]any{"id": userData.ID, "email": userData.Email, "is_chirpy_red": userData.Chirpy_red});
 	// RespondWithJSON(w, 201, userData);
 }
 
@@ -44,7 +44,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	code, returnUser := MyDatabase.VerifyUser(user.Email, user.Password, user.ExpirationTime)
 
-	RespondWithJSON(w, code, map[string]any{"id": returnUser.ID, "email": returnUser.Email, "token": returnUser.GenerateToken(), "refresh_token": returnUser.CreateRefreshToken()})
+	RespondWithJSON(w, code, map[string]any{"id": returnUser.ID, "email": returnUser.Email, "token": returnUser.GenerateToken(), "refresh_token": returnUser.CreateRefreshToken(), "is_chirpy_red": returnUser.Chirpy_red})
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
