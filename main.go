@@ -3,10 +3,13 @@ package main
 import (
 	"net/http"
 
+	"github.com/joho/godotenv"
 	"github.com/unnxt30/Chirpy-BD/src"
 )
 
 func main() {
+
+	godotenv.Load()
 
 	var apiCfg src.ApiConfig
 	server_mux := http.NewServeMux()
@@ -22,6 +25,9 @@ func main() {
 	server_mux.HandleFunc("GET /api/chirps/{id}", src.ChirpGETbyID)
 	server_mux.HandleFunc("POST /api/users", src.WriteUser)
 	server_mux.HandleFunc("POST /api/login", src.LoginUser)
+	server_mux.HandleFunc("PUT /api/users", src.UpdateUser)
+	server_mux.HandleFunc("POST /api/refresh", src.CheckRefToken)
+	server_mux.HandleFunc("POST /api/revoke", src.RevokeToken)
 	mock_server.Addr = ":8080"
 	mock_server.Handler = server_mux
 

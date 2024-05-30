@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	// "os"
 	"strconv"
 	"strings"
 
+	// "github.com/golang-jwt/jwt/v5"
 	database "github.com/unnxt30/Chirpy-BD/internal"
 )
 
@@ -59,16 +61,20 @@ func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 
+	header := r.Header.Get("Authorization")
+	jwtToken := strings.TrimPrefix(header, "Bearer ")
+
 	decoder := json.NewDecoder(r.Body)
 	params := database.Parameters{}
 	err = decoder.Decode(&params)
 
 	if err != nil {
 		RespondWithJSON(w, 404, map[string]string{"error": "Something went wrong"})
-	} else {
+	} else if database.CheckToken(jwtToken) != -1{
+		auth_id := database.CheckToken(jwtToken)
 		// fmt.Println("recieved Chirp Succesfully.")
 		chirpBody := GiveValidBody(w, params.Body, params)
-		responseChirp, _ := MyDatabase.CreateChirp(chirpBody)
+		responseChirp, _ := MyDatabase.CreateChirp(chirpBody, auth_id)
 		fmt.Println("Created chirp")
 		RespondWithJSON(w, 201, responseChirp)
 	}
@@ -105,36 +111,3 @@ func ChirpGETbyID(w http.ResponseWriter, r *http.Request) {
 	RespondWithJSON(w, 200, chirpArray[id-1])
 }
 
-func WriteUser(w http.ResponseWriter, r *http.Request) {
-	MyDatabase, err := database.NewDB("database_user.json")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	user := database.User{}
-	err = decoder.Decode(&user)
-	if err != nil {
-		RespondWithJSON(w, 404, map[string]string{"error": "couldn't create user"})
-	}
-	userData, _ := MyDatabase.CreateUser(user.Email, user.Password)
-
-	RespondWithJSON(w, 201, map[string]any{"id": userData.ID, "email": userData.Email})
-	// RespondWithJSON(w, 201, userData);
-}
-
-func LoginUser(w http.ResponseWriter, r *http.Request) {
-	MyDatabase, err := database.NewDB("database_user.json")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	decoder := json.NewDecoder(r.Body)
-	user := database.User{}
-	decoder.Decode(&user)
-
-	code, returnUser := MyDatabase.VerifyUser(user.Email, user.Password)
-
-	RespondWithJSON(w, code, map[string]any{"id": returnUser.ID, "email": returnUser.Email})
-}

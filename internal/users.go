@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -13,23 +14,29 @@ var userCount int = 0
 const hashValue int = 8
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID             int    `json:"id"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	ExpirationTime int    `json:"expires_in_secods"`
 }
 
 type DBStructUsers struct {
 	Users map[int]User `json:"user"`
 }
 
-func (db *DB) CreateUser(userEmail string, userPassword string) (User, error) {
+func (db *DB) CreateUser(args ...string) (User, error) {
 	userCount++
+
+	if len(args) < 2 {
+		return User{}, errors.New("too few arguments")
+	}
 
 	var newUser User
 	newUser.ID = userCount
-	newUser.Email = userEmail
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(userPassword), hashValue)
+	newUser.Email = args[0]
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(args[1]), hashValue)
 	newUser.Password = string(hashedPassword)
+	newUser.ExpirationTime = 3600;
 
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -95,7 +102,7 @@ func (db *DB) getUserArray() []User {
 	return userDataArray
 }
 
-func (db *DB) VerifyUser(userEmail, userPassword string) (int, User) {
+func (db *DB) VerifyUser(userEmail, userPassword string, expirationTime int) (int, User) {
 
 	userDataArray := db.getUserArray()
 	// fmt.Println(userDataArray)
@@ -105,9 +112,26 @@ func (db *DB) VerifyUser(userEmail, userPassword string) (int, User) {
 			hashedPass := userDataArray[i].Password
 			err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(userPassword))
 			if err == nil {
+				db.mux.Lock()
+				defer db.mux.Unlock()
+				file, _ := os.ReadFile(db.path)
+				readData := &DBStructUsers{}
+				json.Unmarshal(file, &readData)
+				newUser := User{
+					Email:          userDataArray[i].Email,
+					ID:             userDataArray[i].ID,
+					Password:       userDataArray[i].Password,
+					ExpirationTime: expirationTime,
+				}
+				readData.Users[i] = newUser
+				writeData, _ := json.Marshal(readData)
+				os.Remove(db.path)
+				openOrCreateFile(db.path)
+				os.WriteFile(db.path, writeData, 0666)
 				return 200, userDataArray[i]
 
 			} else {
+				fmt.Println(err.Error())
 				return 401, User{}
 			}
 		}
@@ -115,4 +139,41 @@ func (db *DB) VerifyUser(userEmail, userPassword string) (int, User) {
 	}
 
 	return 401, User{}
+}
+
+func (db *DB) UpdateUserInDB(id int, email, password string) User {
+
+	file, _ := os.ReadFile(db.path)
+	readData := &DBStructUsers{}
+	json.Unmarshal(file, &readData)
+	
+	var userToReturn User = User{}
+	writeData := &DBStructUsers{
+		Users: make(map[int]User),
+	}
+	for i := 0; i < len(readData.Users); i++ {
+		if readData.Users[i].ID == id {
+			var newUser User
+			newUser, _ = db.CreateUser(email, password)
+			newUser.ID = id
+			newUser.ExpirationTime = 3600;
+			writeData.Users[i] = newUser
+
+			userToReturn = newUser
+		} else {
+			var newUser User
+			newUser.Email = readData.Users[i].Email
+			newUser.Password = readData.Users[i].Password
+			newUser.ExpirationTime = 3600;
+			writeData.Users[i] = newUser
+		}
+	}
+
+	os.Remove(db.path)
+	openOrCreateFile(db.path)
+	newDbData, _ := json.Marshal(writeData)
+
+	os.WriteFile(db.path, newDbData, 0666)
+	return userToReturn
+
 }

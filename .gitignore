@@ -1,3 +1,5 @@
 database.json
 .DS_Store  
 .env
+database_user.json
+database_refToken.json

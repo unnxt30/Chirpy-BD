@@ -10,8 +10,9 @@ import (
 var chirpCount int = 0
 
 type Parameters struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID        int    `json:"id"`
+	Body      string `json:"body"`
+	Author_id int    `json:"author_id"`
 }
 
 type DB struct {
@@ -68,12 +69,12 @@ func NewDB(file_path string) (*DB, error) {
 }
 
 // CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (Parameters, error) {
+func (db *DB) CreateChirp(body string, author_id int) (Parameters, error) {
 	chirpCount++
 	var newChirp Parameters
 	newChirp.Body = body
 	newChirp.ID = chirpCount
-	
+	newChirp.Author_id = author_id
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -84,7 +85,7 @@ func (db *DB) CreateChirp(body string) (Parameters, error) {
 	}
 
 	fileStatus, _ := os.Stat(db.path)
-	
+
 	if fileStatus.Size() == 0 {
 		dbData := &DBStructure{
 			Chirps: make(map[int]Parameters), // Initialize the chirps map
@@ -119,8 +120,7 @@ func (db *DB) CreateChirp(body string) (Parameters, error) {
 
 }
 
-
-func (db *DB) GetChirp() ([]Parameters, error){
+func (db *DB) GetChirp() ([]Parameters, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -131,12 +131,12 @@ func (db *DB) GetChirp() ([]Parameters, error){
 	readData := &DBStructure{}
 	json.Unmarshal(file, &readData)
 
-	var chirpsArray []Parameters;
+	var chirpsArray []Parameters
 
-	for i := 0; i<len(readData.Chirps); i++ {
-		chirpsArray = append(chirpsArray, readData.Chirps[i]);
+	for i := 0; i < len(readData.Chirps); i++ {
+		chirpsArray = append(chirpsArray, readData.Chirps[i])
 	}
 
-	return chirpsArray, nil;
+	return chirpsArray, nil
 
 }
